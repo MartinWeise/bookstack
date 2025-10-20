@@ -1,0 +1,388 @@
+# Copyright Martin Weise
+# SPDX-License-Identifier: APACHE-2.0
+
+## @section Global parameters
+
+global:
+  ## Compatibility adaptations for Kubernetes platforms
+  compatibility:
+    ##  Compatibility adaptations for Openshift
+    openshift:
+      ## @param global.compatibility.openshift.adaptSecurityContext Adapt the securityContext sections of the deployment to make them compatible with Openshift restricted-v2 SCC: remove runAsUser, runAsGroup and fsGroup and let the platform use their allowed default IDs. Possible values: auto (apply if the detected running cluster is Openshift), force (perform the adaptation always), disabled (do not perform adaptation)
+      adaptSecurityContext: auto
+  security:
+    ## @param global.security.allowInsecureImages Temporary fix until stable alternatives are found to allow mirrored Bitnami images from our own registry.
+    allowInsecureImages: true
+  imageRegistry: ""
+  ## E.g.
+  ## imagePullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  imagePullSecrets: []
+  ## @param global.storageClass Global StorageClass for Persistent Volume(s)
+  storageClass: ""
+
+## @section Common parameters
+
+## @param hostname The endpoint from which bookstack will be accessed (likely you need to change this value).
+endpoint: http://localhost
+## @param strategyType The image pull
+strategyType: RollingUpdate
+## @param clusterDomain The cluster domain.
+clusterDomain: cluster.local
+
+## @section Enable the BookStack deployment
+
+image:
+  ## @param image.registry [default: REGISTRY_NAME] The BookStack registry
+  registry: lscr.io
+  ## @param image.repository [default: REPOSITORY_NAME/linuxserver] The BookStack image repository
+  repository: linuxserver/bookstack
+  ## @param image.tag The BookStack image tag (immutable tags are recommended)
+  tag: v25.07.3
+  ## @param image.digest BookStack image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
+  digest: ""
+  ## @param image.pullPolicy BookStack image pull policy
+  ## Specify a imagePullPolicy
+  ## ref: https://kubernetes.io/docs/concepts/containers/images/#pre-pulled-images
+  ##
+  pullPolicy: IfNotPresent
+  ## @param image.pullSecrets BookStack image pull secrets
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ## e.g:
+  ## pullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  pullSecrets: []
+  ## @param image.debug Enable BookStack image debug mode
+  debug: false
+## External MariaDB configuration
+## All of these values are only used when mariadb.enabled is set to false
+externalDatabase:
+  ## @param externalDatabase.host The hostname of the external database.
+  host: ""
+  ## @param externalDatabase.host The port of the external database.
+  port: 3306
+  ## @param externalDatabase.user The username of the external database.
+  user: bs_bookstack
+  ## @param externalDatabase.database The database name of the external database.
+  database: bookstack
+  ## @param externalDatabase.database Name of an existing secret resource containing the database credentials.
+  existingSecret: ""
+auth:
+  ## @param auth.appKey Must be a unique key. Generate your own by running
+  ## docker run -it --rm --entrypoint /bin/bash lscr.io/linuxserver/bookstack:latest appkey
+  ## You should keep the "base64:" part for the option value.
+  appKey: "base64:3qjlIoUX4Tw6fUQgZcxMbz6lb8+dAzqpvItqHvahW1c="
+  ## @param auth.database The dashboard database name.
+  database: bookstack
+  ## @param auth.username The dashboard database username.
+  username: bs
+  ## @param auth.password The dashboard database user password.
+  password: bs_bookstack
+## @param podLabels Extra labels for Keycloak pods
+## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: { }
+## @param metadataservice.podAnnotations the pod annotations. Evaluated as a template
+## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: { }
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+podSecurityContext:
+  ## @param metadataservice.podSecurityContext.enabled Enable pods' Security Context
+  enabled: true
+  ## @param metadataservice.podSecurityContext.fsGroupChangePolicy Set filesystem group change policy
+  fsGroupChangePolicy: Always
+  ## @param metadataservice.podSecurityContext.sysctls Set kernel settings using the sysctl interface
+  sysctls: [ ]
+  ## @param metadataservice.podSecurityContext.supplementalGroups Set filesystem extra groups
+  supplementalGroups: [ ]
+  ## @param metadataservice.podSecurityContext.fsGroup Set RabbitMQ pod's Security Context fsGroup
+  fsGroup: 1001
+containerSecurityContext:
+  ## @param metadataservice.containerSecurityContext.enabled Enable containers' Security Context
+  enabled: true
+  ## @param metadataservice.containerSecurityContext.seLinuxOptions Set SELinux options in container
+  seLinuxOptions: { }
+  ## @param metadataservice.containerSecurityContext.runAsUser Set RabbitMQ containers' Security Context runAsUser
+  runAsUser: 1001
+  ## @param metadataservice.containerSecurityContext.runAsGroup Set RabbitMQ containers' Security Context runAsGroup
+  runAsGroup: 1001
+  ## @param metadataservice.containerSecurityContext.runAsNonRoot Set RabbitMQ container's Security Context runAsNonRoot
+  runAsNonRoot: true
+  ## @param metadataservice.containerSecurityContext.allowPrivilegeEscalation Set container's privilege escalation
+  allowPrivilegeEscalation: false
+  ## @param metadataservice.containerSecurityContext.readOnlyRootFilesystem Set container's Security Context readOnlyRootFilesystem
+  readOnlyRootFilesystem: false
+  capabilities:
+    ## @param metadataservice.containerSecurityContext.capabilities.drop Set container's Security Context runAsNonRoot
+    drop: [ "ALL" ]
+  seccompProfile:
+    ## @param metadataservice.containerSecurityContext.seccompProfile.type Set container's Security Context seccomp profile
+    type: "RuntimeDefault"
+## @param customLivenessProbe Custom Liveness probes for BookStack
+customLivenessProbe: {}
+## @param customReadinessProbe Custom Readiness probes BookStack
+customReadinessProbe: {}
+## @param customStartupProbe Custom Startup probes for BookStack
+customStartupProbe: {}
+## @param lifecycleHooks LifecycleHooks to set additional configuration at startup
+lifecycleHooks: {}
+## @param command Override default container command (useful when using custom images)
+command: []
+## @param args Override default container args (useful when using custom images)
+args: []
+## @param extraEnvVars Extra environment variables to be set on the BookStack container
+## Example:
+## extraEnvVars:
+##   - name: FOO
+##     value: "bar"
+##
+extraEnvVars: []
+## @param extraEnvVarsCM Name of existing ConfigMap containing extra env vars
+extraEnvVarsCM: ""
+## @param extraEnvVarsSecret Name of existing Secret containing extra env vars
+extraEnvVarsSecret: ""
+
+
+containerPorts:
+  ## @param containerPorts.http The container's HTTP port
+  http: 6875
+
+## @param metadataservice.resourcesPreset The container resource preset
+resourcesPreset: "small"
+## @param metadataservice.resources Set container requests and limits for different resources like CPU or memory (essential for production workloads)
+resources: { }
+##   requests:
+##     cpu: 250m
+##     memory: 64Mi
+##   limits:
+##     cpu: 500m
+##     memory: 1024Mi
+
+## Configure extra options for Keycloak containers' liveness, readiness and startup probes
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
+livenessProbe:
+  ## @param livenessProbe.enabled Enable livenessProbe on Keycloak containers
+  enabled: true
+  ## @param livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
+  initialDelaySeconds: 300
+  ## @param livenessProbe.periodSeconds Period seconds for livenessProbe
+  periodSeconds: 1
+  ## @param livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
+  timeoutSeconds: 5
+  ## @param livenessProbe.failureThreshold Failure threshold for livenessProbe
+  failureThreshold: 3
+  ## @param livenessProbe.successThreshold Success threshold for livenessProbe
+  successThreshold: 1
+readinessProbe:
+  ## @param readinessProbe.enabled Enable readinessProbe on Keycloak containers
+  enabled: true
+  ## @param readinessProbe.initialDelaySeconds Initial delay seconds for readinessProbe
+  initialDelaySeconds: 30
+  ## @param readinessProbe.periodSeconds Period seconds for readinessProbe
+  periodSeconds: 10
+  ## @param readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
+  timeoutSeconds: 1
+  ## @param readinessProbe.failureThreshold Failure threshold for readinessProbe
+  failureThreshold: 3
+  ## @param readinessProbe.successThreshold Success threshold for readinessProbe
+  successThreshold: 1
+startupProbe:
+  ## @param startupProbe.enabled Enable startupProbe on Keycloak containers
+  enabled: false
+  ## @param startupProbe.initialDelaySeconds Initial delay seconds for startupProbe
+  initialDelaySeconds: 30
+  ## @param startupProbe.periodSeconds Period seconds for startupProbe
+  periodSeconds: 5
+  ## @param startupProbe.timeoutSeconds Timeout seconds for startupProbe
+  timeoutSeconds: 1
+  ## @param startupProbe.failureThreshold Failure threshold for startupProbe
+  failureThreshold: 60
+  ## @param startupProbe.successThreshold Success threshold for startupProbe
+  successThreshold: 1
+
+## @section Exposure parameters
+
+service:
+  ## @param service.type Kubernetes service type
+  type: ClusterIP
+  ## @param service.http.enabled Enable http port on service
+  http:
+    enabled: true
+  ports:
+    ## @param service.ports.http BookStack service HTTP port
+    http: 80
+  ## @param service.nodePorts [object] Specify the nodePort values for the LoadBalancer and NodePort service types.
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+  ##
+  nodePorts:
+    http: ""
+  ## @param service.sessionAffinity Control where client requests go, to the same pod or round-robin
+  ## Values: ClientIP or None
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/
+  sessionAffinity: None
+  ## @param service.sessionAffinityConfig Additional settings for the sessionAffinity
+  ## sessionAffinityConfig:
+  ##   clientIP:
+  ##     timeoutSeconds: 300
+  sessionAffinityConfig: {}
+  ## @param service.clusterIP BookStack service clusterIP IP
+  ## e.g:
+  ## clusterIP: None
+  clusterIP: ""
+  ## @param service.loadBalancerIP loadBalancerIP for the SuiteCRM Service (optional, cloud specific)
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
+  loadBalancerIP: ""
+  ## @param service.loadBalancerSourceRanges Address that are allowed when service is LoadBalancer
+  ## https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/#restrict-access-for-loadbalancer-service
+  ## Example:
+  ## loadBalancerSourceRanges:
+  ##   - 10.10.10.0/24
+  loadBalancerSourceRanges: [ ]
+  ## @param service.externalTrafficPolicy Enable client source IP preservation
+  ## ref https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
+  externalTrafficPolicy: Cluster
+  ## @param service.annotations Additional custom annotations for BookStack service
+  annotations: { }
+  ## @param service.extraPorts Extra port to expose on BookStack service
+  extraPorts: [ ]
+## Network Policy configuration
+## ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+networkPolicy:
+  ## @param networkPolicy.enabled Specifies whether a NetworkPolicy should be created
+  enabled: true
+  ## @param networkPolicy.allowExternal Don't require server label for connections
+  ## The Policy model to apply. When set to false, only pods with the correct
+  ## server label will have network access to the ports server is listening
+  ## on. When true, server will accept connections from any source
+  ## (with the correct destination port).
+  allowExternal: true
+  ## @param networkPolicy.allowExternalEgress Allow the pod to access any range of port and all destinations.
+  allowExternalEgress: true
+  ## @param networkPolicy.kubeAPIServerPorts [array] List of possible endpoints to kube-apiserver (limit to your cluster settings to increase security)
+  kubeAPIServerPorts: [443, 6443, 8443]
+  ## @param networkPolicy.extraIngress [array] Add extra ingress rules to the NetworkPolicy
+  ## e.g:
+  ## extraIngress:
+  ##   - ports:
+  ##       - port: 1234
+  ##     from:
+  ##       - podSelector:
+  ##           - matchLabels:
+  ##               - role: frontend
+  ##       - podSelector:
+  ##           - matchExpressions:
+  ##               - key: role
+  ##                 operator: In
+  ##                 values:
+  ##                   - frontend
+  extraIngress: []
+  ## @param networkPolicy.extraEgress [array] Add extra ingress rules to the NetworkPolicy
+  ## e.g:
+  ## extraEgress:
+  ##   - ports:
+  ##       - port: 1234
+  ##     to:
+  ##       - podSelector:
+  ##           - matchLabels:
+  ##               - role: frontend
+  ##       - podSelector:
+  ##           - matchExpressions:
+  ##               - key: role
+  ##                 operator: In
+  ##                 values:
+  ##                   - frontend
+  extraEgress: []
+  ## @param networkPolicy.ingressNSMatchLabels [object] Labels to match to allow traffic from other namespaces
+  ## @param networkPolicy.ingressNSPodMatchLabels [object] Pod labels to match to allow traffic from other namespaces
+  ingressNSMatchLabels: {}
+  ingressNSPodMatchLabels: {}
+
+## @section RBAC parameter
+
+## Specifies whether a ServiceAccount should be created
+serviceAccount:
+  ## @param serviceAccount.create Enable the creation of a ServiceAccount for Keycloak pods
+  create: true
+  ## @param serviceAccount.name Name of the created ServiceAccount
+  ## If not set and create is true, a name is generated using the fullname template
+  name: ""
+  ## @param serviceAccount.automountServiceAccountToken Auto-mount the service account token in the pod
+  automountServiceAccountToken: false
+  ## @param serviceAccount.annotations Additional custom annotations for the ServiceAccount
+  annotations: {}
+  ## @param serviceAccount.extraLabels Additional labels for the ServiceAccount
+  extraLabels: {}
+
+## @section Database
+
+mariadb:
+  ## @param mariadb.enabled Enable the MariaDB database
+  enabled: true
+  image:
+    ## @param mariadb.image.registry [default: REGISTRY_NAME] The MariaDB registry
+    registry: docker.io
+    ## @param mariadb.image.repository [default: REPOSITORY_NAME/linuxserver] The MariaDB image repository
+    repository: linuxserver/mariadb
+    ## @param mariadb.image.tag The MariaDB image tag (immutable tags are recommended)
+    tag: 11.4.8
+    ## @param mariadb.image.digest MariaDB image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
+    digest: ""
+    ## @param mariadb.image.pullPolicy MariaDB image pull policy
+    ## Specify a imagePullPolicy
+    ## ref: https://kubernetes.io/docs/concepts/containers/images/#pre-pulled-images
+    ##
+    pullPolicy: IfNotPresent
+    ## @param mariadb.image.pullSecrets MariaDB image pull secrets
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ## e.g:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
+    ##
+    pullSecrets: [ ]
+    ## @param mariadb.image.debug Enable MariaDB image debug mode
+    debug: false
+  auth:
+    ## @param mariadb.auth.rootUser.password The root user password.
+    rootPassword: ""
+      ## @param mariadb.auth.username The user name of the user that should be created.
+    username: bs
+    ## @param mariadb.auth.password The user password of the user that should be created.
+    password: bs_password
+    ## @param mariadb.auth.existingSecret Name of existing secret to use for MariaDB credentials.
+    ## NOTE: When set, the configuration parameter are ignored
+    existingSecret: ""
+  db:
+    ## @param mariadb.db.name The database name that should be created.
+    name: dbrepo
+  galera:
+    mariabackup:
+      ## @param mariadb.galera.mariabackup.user The database backup username.
+      user: backup
+      ## @param mariadb.galera.mariabackup.password The database backup user password
+      password: backup
+  ## @param mariadb.jdbcExtraArgs The extra arguments for JDBC connections in the microservices.
+  jdbcExtraArgs: ""
+  metrics:
+    ## @skip mariadb.metrics.enabled The Prometheus settings.
+    enabled: true
+  ## @skip mariadb.initdbScriptsConfigMap The initial database scripts.
+  initdbScriptsConfigMap: metadata-db-config
+  ## @param mariadb.extraInitDbScripts Additional init.db scripts that are executed on the first start.
+  extraInitDbScripts: { }
+  #    03-additional-data.sql: |
+  #      BEGIN;
+  #      INSERT INTO `mdb_containers` (name, internal_name, image_id, host, port, sidecar_host, sidecar_port, privileged_username, privileged_password)
+  #        VALUES ('MariaDB Galera TEST', 'mariadb_11_1_3', 1, 'data-db', 3306, 'data-db', 80, 'root', 'dbrepo');
+  #      COMMIT;
+  ## @param mariadb.resourcesPreset The container resource preset
+  resourcesPreset: "xlarge"
+  persistence:
+    ## @param mariadb.persistence.enabled Enable persistent storage.
+    enabled: true
+  ## @param mariadb.replicaCount The number of cluster nodes, should be uneven i.e. 2n+1
+  replicaCount: 3

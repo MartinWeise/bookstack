@@ -1,0 +1,25 @@
+annotations:
+  category: storage
+  licenses: Apache-2.0
+apiVersion: v2
+name: bookstack
+description: Helm Chart for installing BookStack
+sources:
+  - https://github.com/MartinWeise/bookstack
+type: application
+version: "25.0.0"
+appVersion: "v25.07.3-ls223"
+keywords:
+  - bookstack
+  - content management
+maintainers:
+  - name: Martin Weise
+    email: martinweiseat@gmail.com
+home: https://www.bookstackapp.com/
+icon: https://www.bookstackapp.com/images/apple-touch-icon-152x152.png
+dependencies:
+  - name: common
+    repository: oci://registry-1.docker.io/bitnamicharts
+    tags:
+      - bitnami-common
+    version: 2.31.2
