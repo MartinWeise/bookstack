@@ -6,7 +6,7 @@ information.
 ## TL;DR
 
 ```bash
-helm install my-release "oci://docker.io/mweise/charts/bookstack"
+helm install my-release "oci://registry-1.docker.io/mweise/bookstack"
 ```
 
 ## Parameters
