@@ -30,6 +30,8 @@ endpoint: http://localhost
 strategyType: Recreate
 ## @param clusterDomain The cluster domain.
 clusterDomain: cluster.local
+## @param httpRelativePath The http relative path
+httpRelativePath: /
 
 ## @section Enable the BookStack deployment
 
@@ -78,7 +80,7 @@ auth:
   appKey: "base64:3qjlIoUX4Tw6fUQgZcxMbz6lb8+dAzqpvItqHvahW1c="
 volumePermissions:
   ## @param volumePermissions.enabled Enable init container that changes the owner/group of the PV mount point to `runAsUser:fsGroup`
-  enabled: false
+  enabled: true
   image:
     ## @param volumePermissions.image.registry [default: REGISTRY_NAME] Shell + Utility image registry
     registry: docker.io
@@ -186,18 +188,18 @@ podSecurityContext:
   sysctls: [ ]
   ## @param podSecurityContext.supplementalGroups Set filesystem extra groups
   supplementalGroups: [ ]
-  ## @param podSecurityContext.fsGroup Set RabbitMQ pod's Security Context fsGroup
+  ## @param podSecurityContext.fsGroup Set BookStack pod's Security Context fsGroup
   fsGroup: 0
 containerSecurityContext:
   ## @param containerSecurityContext.enabled Enable containers' Security Context
   enabled: true
   ## @param containerSecurityContext.seLinuxOptions Set SELinux options in container
   seLinuxOptions: { }
-  ## @param containerSecurityContext.runAsUser Set RabbitMQ containers' Security Context runAsUser
+  ## @param containerSecurityContext.runAsUser Set BookStack containers' Security Context runAsUser
   runAsUser: 0
-  ## @param containerSecurityContext.runAsGroup Set RabbitMQ containers' Security Context runAsGroup
+  ## @param containerSecurityContext.runAsGroup Set BookStack containers' Security Context runAsGroup
   runAsGroup: 0
-  ## @param containerSecurityContext.runAsNonRoot Set RabbitMQ container's Security Context runAsNonRoot
+  ## @param containerSecurityContext.runAsNonRoot Set BookStack container's Security Context runAsNonRoot
   runAsNonRoot: false
   ## @param containerSecurityContext.allowPrivilegeEscalation Set container's privilege escalation
   allowPrivilegeEscalation: true

@@ -38,7 +38,24 @@ spec:
           args:
             - -ec
             - |
+              mkdir -p /config/www
               chown -R {{ .Values.containerSecurityContext.runAsUser }}:{{ .Values.podSecurityContext.fsGroup }} /config
+              cat <<EOF > /config/www/.env
+              APP_KEY={{ .Values.auth.appKey }}
+              APP_URL={{ .Values.endpoint }}
+              DB_HOST={{ include "bookstack.databaseHost" . }}
+              DB_PORT={{ include "bookstack.databasePort" . }}
+              DB_USERNAME={{ include "bookstack.databaseUser" . }}
+              DB_PASSWORD={{ include "bookstack.databasePassword" . }}
+              MAIL_DRIVER=smtp
+              MAIL_FROM_NAME="BookStack"
+              MAIL_FROM=bookstack@example.com
+              MAIL_HOST=localhost
+              MAIL_PORT=587
+              MAIL_USERNAME=null
+              MAIL_PASSWORD=null
+              MAIL_ENCRYPTION=null
+              EOF
           securityContext: {{- include "common.tplvalues.render" (dict "value" .Values.volumePermissions.containerSecurityContext "context" $) | nindent 12 }}
           {{- if .Values.volumePermissions.resources }}
           resources: {{- include "common.tplvalues.render" (dict "value" .Values.volumePermissions.resources "context" $) | nindent 12 }}
@@ -46,8 +63,10 @@ spec:
           resources: {{- include "common.resources.preset" (dict "type" .Values.volumePermissions.resourcesPreset) | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - name: empty-dir
+            - name: run
               mountPath: /run
+            - name: config
+              mountPath: /config
       {{- end }}
       containers:
         - name: bookstack
@@ -73,11 +92,10 @@ spec:
               containerPort: {{ .Values.containerPorts.https }}
               protocol: TCP
           volumeMounts:
-            - name: empty-dir
+            - name: run
               mountPath: /run
-            - name: env
-              mountPath: /config/www/.env
-              subPath: env
+            - name: config
+              mountPath: /config
           env:
             - name: POD_NAME
               valueFrom:
@@ -122,7 +140,7 @@ spec:
             {{- else if .Values.readinessProbe.enabled }}
           readinessProbe: {{- omit .Values.readinessProbe "enabled" | toYaml | nindent 12 }}
             httpGet:
-              path: {{ .Values.httpRelativePath }}realms/{{ .Values.adminRealm | default "master" }}
+              path: {{ .Values.httpRelativePath }}
               port: http
             {{- end }}
           {{- if .Values.resources }}
@@ -148,8 +166,7 @@ spec:
       topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .Values.topologySpreadConstraints "context" $) | nindent 8 }}
       {{- end }}
       volumes:
-        - name: empty-dir
+        - name: config
           emptyDir: { }
-        - name: env
-          configMap:
-            name: {{ printf "%s-env" (include "common.names.fullname" .) }}
+        - name: run
+          emptyDir: { }
