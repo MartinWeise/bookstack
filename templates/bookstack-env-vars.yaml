@@ -6,10 +6,4 @@ metadata:
   name: {{ printf "%s-env-vars" (include "common.names.fullname" .) }}
   namespace: {{ include "common.names.namespace" . | quote }}
 data:
-  APP_URL: "{{ .Values.endpoint }}"
-  APP_KEY: "{{ .Values.auth.appKey }}"
-  DB_HOST: {{ include "bookstack.databaseHost" . | quote }}
-  DB_PORT: {{ include "bookstack.databasePort" . | quote }}
-  DB_USERNAME: {{ include "bookstack.databaseUser" . | quote }}
-  DB_PASSWORD: {{ include "bookstack.databasePassword" . | quote }}
 {{- end }}

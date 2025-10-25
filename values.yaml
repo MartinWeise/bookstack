@@ -18,7 +18,7 @@ global:
   ## imagePullSecrets:
   ##   - myRegistryKeySecretName
   ##
-  imagePullSecrets: []
+  imagePullSecrets: [ ]
   ## @param global.storageClass Global StorageClass for Persistent Volume(s)
   storageClass: ""
 
@@ -26,8 +26,8 @@ global:
 
 ## @param hostname The endpoint from which bookstack will be accessed (likely you need to change this value).
 endpoint: http://localhost
-## @param strategyType The image pull
-strategyType: RollingUpdate
+## @param strategyType The update strategy
+strategyType: Recreate
 ## @param clusterDomain The cluster domain.
 clusterDomain: cluster.local
 
@@ -39,7 +39,7 @@ image:
   ## @param image.repository [default: REPOSITORY_NAME/linuxserver] The BookStack image repository
   repository: linuxserver/bookstack
   ## @param image.tag The BookStack image tag (immutable tags are recommended)
-  tag: v25.07.3
+  tag: v25.07.3-ls224
   ## @param image.digest BookStack image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
   digest: ""
   ## @param image.pullPolicy BookStack image pull policy
@@ -55,7 +55,7 @@ image:
   ## pullSecrets:
   ##   - myRegistryKeySecretName
   ##
-  pullSecrets: []
+  pullSecrets: [ ]
   ## @param image.debug Enable BookStack image debug mode
   debug: false
 ## External MariaDB configuration
@@ -76,70 +76,158 @@ auth:
   ## docker run -it --rm --entrypoint /bin/bash lscr.io/linuxserver/bookstack:latest appkey
   ## You should keep the "base64:" part for the option value.
   appKey: "base64:3qjlIoUX4Tw6fUQgZcxMbz6lb8+dAzqpvItqHvahW1c="
-  ## @param auth.database The dashboard database name.
-  database: bookstack
-  ## @param auth.username The dashboard database username.
-  username: bs
-  ## @param auth.password The dashboard database user password.
-  password: bs_bookstack
+volumePermissions:
+  ## @param volumePermissions.enabled Enable init container that changes the owner/group of the PV mount point to `runAsUser:fsGroup`
+  enabled: false
+  image:
+    ## @param volumePermissions.image.registry [default: REGISTRY_NAME] Shell + Utility image registry
+    registry: docker.io
+    ## @param volumePermissions.image.repository [default: REPOSITORY_NAME/linuxserver] The Shell + Utility image repository
+    repository: mweise/os-shell
+    ## @param volumePermissions.image.tag The Shell + Utility image tag (immutable tags are recommended)
+    tag: 1.0.1
+    ## @param volumePermissions.image.digest Shell + Utility image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
+    digest: ""
+    ## @param volumePermissions.image.pullPolicy Shell + Utility image pull policy
+    ## Specify a imagePullPolicy
+    ## ref: https://kubernetes.io/docs/concepts/containers/images/#pre-pulled-images
+    ##
+    pullPolicy: Always
+    ## @param volumePermissions.image.pullSecrets Shell + Utility image pull secrets
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ## e.g:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
+    ##
+    pullSecrets: [ ]
+  ## Init container's resource requests and limits
+  ## ref: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+  ## @param volumePermissions.resourcesPreset Set container resources according to one common preset (allowed values: none, nano, micro, small, medium, large, xlarge, 2xlarge). This is ignored if volumePermissions.resources is set (volumePermissions.resources is recommended for production).
+  ## More information: https://github.com/bitnami/charts/blob/main/bitnami/common/templates/_resources.tpl#L15
+  ##
+  resourcesPreset: "nano"
+  ## @param volumePermissions.resources Set container requests and limits for different resources like CPU or memory (essential for production workloads)
+  ## Example:
+  ## resources:
+  ##   requests:
+  ##     cpu: 2
+  ##     memory: 512Mi
+  ##   limits:
+  ##     cpu: 3
+  ##     memory: 1024Mi
+  ##
+  resources: { }
+  ## Init container Container Security Context
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+  ## @param volumePermissions.containerSecurityContext.seLinuxOptions [object,nullable] Set SELinux options in container
+  ## @param volumePermissions.containerSecurityContext.runAsUser Set init container's Security Context runAsUser
+  ## NOTE: when runAsUser is set to special value "auto", init container will try to chown the
+  ##   data folder to auto-determined user&group, using commands: `id -u`:`id -G | cut -d" " -f2`
+  ##   "auto" is especially useful for OpenShift which has scc with dynamic user ids (and 0 is not allowed)
+  ##
+  containerSecurityContext:
+    seLinuxOptions: { }
+    runAsUser: 0
 ## @param podLabels Extra labels for Keycloak pods
 ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 podLabels: { }
-## @param metadataservice.podAnnotations the pod annotations. Evaluated as a template
+## @param podAnnotations the pod annotations. Evaluated as a template
 ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
 podAnnotations: { }
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+## @param podAffinityPreset Pod affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+podAffinityPreset: ""
+## @param podAntiAffinityPreset Pod anti-affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+podAntiAffinityPreset: soft
+## Node affinity preset
+## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+nodeAffinityPreset:
+  ## @param nodeAffinityPreset.type Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+  type: ""
+  ## @param nodeAffinityPreset.key Node label key to match. Ignored if `affinity` is set.
+  ## E.g.
+  ## key: "kubernetes.io/e2e-az-name"
+  key: ""
+  ## @param nodeAffinityPreset.values Node label values to match. Ignored if `affinity` is set.
+  ## E.g.
+  ## values:
+  ##   - e2e-az1
+  ##   - e2e-az2
+  values: [ ]
+## @param affinity Affinity for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+## Note: podAffinityPreset, podAntiAffinityPreset, and nodeAffinityPreset will be ignored when it's set
+##
+affinity: { }
+## @param nodeSelector Node labels for pod assignment
+## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+nodeSelector: { }
+## @param tolerations Tolerations for pod assignment
+## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+tolerations: [ ]
+## @param topologySpreadConstraints Topology Spread Constraints for pods assignment
+## ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+## E.g.
+## topologySpreadConstraints:
+##   - maxSkew: 1
+##     topologyKey: topology.kubernetes.io/zone
+##     whenUnsatisfiable: DoNotSchedule
+topologySpreadConstraints: [ ]
 podSecurityContext:
-  ## @param metadataservice.podSecurityContext.enabled Enable pods' Security Context
+  ## @param podSecurityContext.enabled Enable pods' Security Context
   enabled: true
-  ## @param metadataservice.podSecurityContext.fsGroupChangePolicy Set filesystem group change policy
+  ## @param podSecurityContext.fsGroupChangePolicy Set filesystem group change policy
   fsGroupChangePolicy: Always
-  ## @param metadataservice.podSecurityContext.sysctls Set kernel settings using the sysctl interface
+  ## @param podSecurityContext.sysctls Set kernel settings using the sysctl interface
   sysctls: [ ]
-  ## @param metadataservice.podSecurityContext.supplementalGroups Set filesystem extra groups
+  ## @param podSecurityContext.supplementalGroups Set filesystem extra groups
   supplementalGroups: [ ]
-  ## @param metadataservice.podSecurityContext.fsGroup Set RabbitMQ pod's Security Context fsGroup
-  fsGroup: 1001
+  ## @param podSecurityContext.fsGroup Set RabbitMQ pod's Security Context fsGroup
+  fsGroup: 0
 containerSecurityContext:
-  ## @param metadataservice.containerSecurityContext.enabled Enable containers' Security Context
+  ## @param containerSecurityContext.enabled Enable containers' Security Context
   enabled: true
-  ## @param metadataservice.containerSecurityContext.seLinuxOptions Set SELinux options in container
+  ## @param containerSecurityContext.seLinuxOptions Set SELinux options in container
   seLinuxOptions: { }
-  ## @param metadataservice.containerSecurityContext.runAsUser Set RabbitMQ containers' Security Context runAsUser
-  runAsUser: 1001
-  ## @param metadataservice.containerSecurityContext.runAsGroup Set RabbitMQ containers' Security Context runAsGroup
-  runAsGroup: 1001
-  ## @param metadataservice.containerSecurityContext.runAsNonRoot Set RabbitMQ container's Security Context runAsNonRoot
-  runAsNonRoot: true
-  ## @param metadataservice.containerSecurityContext.allowPrivilegeEscalation Set container's privilege escalation
-  allowPrivilegeEscalation: false
-  ## @param metadataservice.containerSecurityContext.readOnlyRootFilesystem Set container's Security Context readOnlyRootFilesystem
+  ## @param containerSecurityContext.runAsUser Set RabbitMQ containers' Security Context runAsUser
+  runAsUser: 0
+  ## @param containerSecurityContext.runAsGroup Set RabbitMQ containers' Security Context runAsGroup
+  runAsGroup: 0
+  ## @param containerSecurityContext.runAsNonRoot Set RabbitMQ container's Security Context runAsNonRoot
+  runAsNonRoot: false
+  ## @param containerSecurityContext.allowPrivilegeEscalation Set container's privilege escalation
+  allowPrivilegeEscalation: true
+  ## @param containerSecurityContext.readOnlyRootFilesystem Set container's Security Context readOnlyRootFilesystem
   readOnlyRootFilesystem: false
   capabilities:
-    ## @param metadataservice.containerSecurityContext.capabilities.drop Set container's Security Context runAsNonRoot
-    drop: [ "ALL" ]
+    ## @param containerSecurityContext.capabilities.drop Set container's Security Context runAsNonRoot
+    drop: [ ]
   seccompProfile:
-    ## @param metadataservice.containerSecurityContext.seccompProfile.type Set container's Security Context seccomp profile
+    ## @param containerSecurityContext.seccompProfile.type Set container's Security Context seccomp profile
     type: "RuntimeDefault"
 ## @param customLivenessProbe Custom Liveness probes for BookStack
-customLivenessProbe: {}
+customLivenessProbe: { }
 ## @param customReadinessProbe Custom Readiness probes BookStack
-customReadinessProbe: {}
+customReadinessProbe: { }
 ## @param customStartupProbe Custom Startup probes for BookStack
-customStartupProbe: {}
+customStartupProbe: { }
 ## @param lifecycleHooks LifecycleHooks to set additional configuration at startup
-lifecycleHooks: {}
+lifecycleHooks: { }
 ## @param command Override default container command (useful when using custom images)
-command: []
+command: [ ]
 ## @param args Override default container args (useful when using custom images)
-args: []
+args: [ ]
 ## @param extraEnvVars Extra environment variables to be set on the BookStack container
 ## Example:
 ## extraEnvVars:
 ##   - name: FOO
 ##     value: "bar"
 ##
-extraEnvVars: []
+extraEnvVars: [ ]
 ## @param extraEnvVarsCM Name of existing ConfigMap containing extra env vars
 extraEnvVarsCM: ""
 ## @param extraEnvVarsSecret Name of existing Secret containing extra env vars
@@ -148,11 +236,13 @@ extraEnvVarsSecret: ""
 
 containerPorts:
   ## @param containerPorts.http The container's HTTP port
-  http: 6875
+  http: 80
+  ## @param containerPorts.https The container's HTTPS port
+  https: 443
 
-## @param metadataservice.resourcesPreset The container resource preset
+## @param resourcesPreset The container resource preset
 resourcesPreset: "small"
-## @param metadataservice.resources Set container requests and limits for different resources like CPU or memory (essential for production workloads)
+## @param resources Set container requests and limits for different resources like CPU or memory (essential for production workloads)
 resources: { }
 ##   requests:
 ##     cpu: 250m
@@ -208,17 +298,23 @@ startupProbe:
 service:
   ## @param service.type Kubernetes service type
   type: ClusterIP
-  ## @param service.http.enabled Enable http port on service
   http:
+    ## @param service.http.enabled Enable http port on service
+    enabled: true
+  https:
+    ## @param service.https.enabled Enable https port on service
     enabled: true
   ports:
     ## @param service.ports.http BookStack service HTTP port
     http: 80
+    ## @param service.ports.http BookStack service HTTP port
+    https: 443
   ## @param service.nodePorts [object] Specify the nodePort values for the LoadBalancer and NodePort service types.
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
   ##
   nodePorts:
     http: ""
+    https: ""
   ## @param service.sessionAffinity Control where client requests go, to the same pod or round-robin
   ## Values: ClientIP or None
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/
@@ -227,7 +323,7 @@ service:
   ## sessionAffinityConfig:
   ##   clientIP:
   ##     timeoutSeconds: 300
-  sessionAffinityConfig: {}
+  sessionAffinityConfig: { }
   ## @param service.clusterIP BookStack service clusterIP IP
   ## e.g:
   ## clusterIP: None
@@ -262,7 +358,7 @@ networkPolicy:
   ## @param networkPolicy.allowExternalEgress Allow the pod to access any range of port and all destinations.
   allowExternalEgress: true
   ## @param networkPolicy.kubeAPIServerPorts [array] List of possible endpoints to kube-apiserver (limit to your cluster settings to increase security)
-  kubeAPIServerPorts: [443, 6443, 8443]
+  kubeAPIServerPorts: [ 443, 6443, 8443 ]
   ## @param networkPolicy.extraIngress [array] Add extra ingress rules to the NetworkPolicy
   ## e.g:
   ## extraIngress:
@@ -278,7 +374,7 @@ networkPolicy:
   ##                 operator: In
   ##                 values:
   ##                   - frontend
-  extraIngress: []
+  extraIngress: [ ]
   ## @param networkPolicy.extraEgress [array] Add extra ingress rules to the NetworkPolicy
   ## e.g:
   ## extraEgress:
@@ -294,11 +390,11 @@ networkPolicy:
   ##                 operator: In
   ##                 values:
   ##                   - frontend
-  extraEgress: []
+  extraEgress: [ ]
   ## @param networkPolicy.ingressNSMatchLabels [object] Labels to match to allow traffic from other namespaces
   ## @param networkPolicy.ingressNSPodMatchLabels [object] Pod labels to match to allow traffic from other namespaces
-  ingressNSMatchLabels: {}
-  ingressNSPodMatchLabels: {}
+  ingressNSMatchLabels: { }
+  ingressNSPodMatchLabels: { }
 
 ## @section RBAC parameter
 
@@ -312,22 +408,24 @@ serviceAccount:
   ## @param serviceAccount.automountServiceAccountToken Auto-mount the service account token in the pod
   automountServiceAccountToken: false
   ## @param serviceAccount.annotations Additional custom annotations for the ServiceAccount
-  annotations: {}
+  annotations: { }
   ## @param serviceAccount.extraLabels Additional labels for the ServiceAccount
-  extraLabels: {}
+  extraLabels: { }
 
 ## @section Database
 
 mariadb:
   ## @param mariadb.enabled Enable the MariaDB database
   enabled: true
+  ## @param mariadb.fullnameOverride
+  fullnameOverride: mariadb
   image:
     ## @param mariadb.image.registry [default: REGISTRY_NAME] The MariaDB registry
-    registry: docker.io
+    registry: registry.datalab.tuwien.ac.at
     ## @param mariadb.image.repository [default: REPOSITORY_NAME/linuxserver] The MariaDB image repository
-    repository: linuxserver/mariadb
+    repository: bitnami/mariadb-galera
     ## @param mariadb.image.tag The MariaDB image tag (immutable tags are recommended)
-    tag: 11.4.8
+    tag: 11.3.2
     ## @param mariadb.image.digest MariaDB image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
     digest: ""
     ## @param mariadb.image.pullPolicy MariaDB image pull policy
@@ -346,43 +444,38 @@ mariadb:
     pullSecrets: [ ]
     ## @param mariadb.image.debug Enable MariaDB image debug mode
     debug: false
-  auth:
+  rootUser:
+    ## @param mariadb.auth.rootUser.user The root user username.
+    user: root
     ## @param mariadb.auth.rootUser.password The root user password.
-    rootPassword: ""
-      ## @param mariadb.auth.username The user name of the user that should be created.
-    username: bs
-    ## @param mariadb.auth.password The user password of the user that should be created.
-    password: bs_password
-    ## @param mariadb.auth.existingSecret Name of existing secret to use for MariaDB credentials.
-    ## NOTE: When set, the configuration parameter are ignored
-    existingSecret: ""
+    password: mariadb
   db:
     ## @param mariadb.db.name The database name that should be created.
-    name: dbrepo
+    name: forge
+    ## @param mariadb.db.user The user name of the user that should be created.
+    user: bs
+    ## @param mariadb.db.password The user password of the user that should be created.
+    password: bs_password
   galera:
+    ## Galera backup settings
     mariabackup:
       ## @param mariadb.galera.mariabackup.user The database backup username.
       user: backup
       ## @param mariadb.galera.mariabackup.password The database backup user password
       password: backup
-  ## @param mariadb.jdbcExtraArgs The extra arguments for JDBC connections in the microservices.
-  jdbcExtraArgs: ""
-  metrics:
-    ## @skip mariadb.metrics.enabled The Prometheus settings.
-    enabled: true
+  ## @param mariadb.existingSecret Name of existing secret to use for MariaDB credentials.
+  ## NOTE: When set, the configuration parameter are ignored
+  existingSecret: ""
   ## @skip mariadb.initdbScriptsConfigMap The initial database scripts.
-  initdbScriptsConfigMap: metadata-db-config
-  ## @param mariadb.extraInitDbScripts Additional init.db scripts that are executed on the first start.
-  extraInitDbScripts: { }
-  #    03-additional-data.sql: |
-  #      BEGIN;
-  #      INSERT INTO `mdb_containers` (name, internal_name, image_id, host, port, sidecar_host, sidecar_port, privileged_username, privileged_password)
-  #        VALUES ('MariaDB Galera TEST', 'mariadb_11_1_3', 1, 'data-db', 3306, 'data-db', 80, 'root', 'dbrepo');
-  #      COMMIT;
+  initdbScriptsConfigMap: ""
+  ## @param mariadb.initdbScripts Set of init.db scripts that are executed on the first start.
+  initdbScripts: { }
+  #  01-additional-init.sql: |
+  #    ...
   ## @param mariadb.resourcesPreset The container resource preset
-  resourcesPreset: "xlarge"
+  resourcesPreset: "small"
   persistence:
     ## @param mariadb.persistence.enabled Enable persistent storage.
     enabled: true
-  ## @param mariadb.replicaCount The number of cluster nodes, should be uneven i.e. 2n+1
-  replicaCount: 3
+  ## @param replicaCount Desired number of cluster nodes
+  replicaCount: 1

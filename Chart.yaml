@@ -23,3 +23,8 @@ dependencies:
     tags:
       - bitnami-common
     version: 2.31.2
+  - name: mariadb-galera
+    alias: mariadb
+    version: 13.2.7
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: mariadb.enabled

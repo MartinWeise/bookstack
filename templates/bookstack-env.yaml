@@ -1,0 +1,24 @@
+{{- if not .Values.auth.existingSecret }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-env" (include "common.names.fullname" .) }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+data:
+  env: |-
+    APP_KEY={{ .Values.auth.appKey }}
+    APP_URL={{ .Values.endpoint }}
+    DB_HOST={{ include "bookstack.databaseHost" . }}
+    DB_PORT={{ include "bookstack.databasePort" . }}
+    DB_USERNAME={{ include "bookstack.databaseUser" . }}
+    DB_PASSWORD={{ include "bookstack.databasePassword" . }}
+    MAIL_DRIVER=smtp
+    MAIL_FROM_NAME="BookStack"
+    MAIL_FROM=bookstack@example.com
+    MAIL_HOST=localhost
+    MAIL_PORT=587
+    MAIL_USERNAME=null
+    MAIL_PASSWORD=null
+    MAIL_ENCRYPTION=null
+{{- end }}

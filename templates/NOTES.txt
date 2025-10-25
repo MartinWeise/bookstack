@@ -6,4 +6,4 @@ APP VERSION: {{ .Chart.AppVersion }}
 
 BookStack can be accessed through the following DNS name from within your cluster:
 
-{{ include "common.names.fullname" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }} (port {{ coalesce .Values.service.ports.http .Values.service.port }})
+{{ include "common.names.fullname" . }}.{{ include "common.names.namespace" . }}.svc.{{ .Values.clusterDomain }}:{{ .Values.service.ports.http }}

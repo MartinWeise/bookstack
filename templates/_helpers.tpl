@@ -77,6 +77,13 @@ Return the proper BookStack image name
 {{- end -}}
 
 {{/*
+Return the proper OS Shell image name
+*/}}
+{{- define "volumePermissions.image" -}}
+{{- include "common.images.image" (dict "imageRoot" .Values.volumePermissions.image "global" .Values.global) -}}
+{{- end -}}
+
+{{/*
 Return the Database hostname
 */}}
 {{- define "bookstack.databaseHost" -}}
@@ -87,7 +94,7 @@ Return the Database hostname
 Return the Database port
 */}}
 {{- define "bookstack.databasePort" -}}
-{{- ternary "3306" (tpl (.Values.externalDatabase.port | toString) $) .Values.mariadb.enabled | quote -}}
+{{- ternary 3306 (tpl (.Values.externalDatabase.port | toString) $) .Values.mariadb.enabled -}}
 {{- end -}}
 
 {{/*
@@ -97,12 +104,12 @@ Return the Database user
 {{- if .Values.mariadb.enabled -}}
     {{- if .Values.global.mariadb -}}
         {{- if .Values.global.mariadb.auth -}}
-            {{- coalesce .Values.global.mariadb.auth.username .Values.mariadb.auth.username -}}
+            {{- coalesce .Values.global.mariadb.auth.username .Values.mariadb.db.user -}}
         {{- else -}}
-            {{- .Values.mariadb.auth.username -}}
+            {{- .Values.mariadb.db.user -}}
         {{- end -}}
     {{- else -}}
-        {{- .Values.mariadb.auth.username -}}
+        {{- .Values.mariadb.db.user -}}
     {{- end -}}
 {{- else -}}
     {{- tpl .Values.externalDatabase.user $ -}}
@@ -116,12 +123,12 @@ Return the Database password
 {{- if .Values.mariadb.enabled -}}
     {{- if .Values.global.mariadb -}}
         {{- if .Values.global.mariadb.auth -}}
-            {{- coalesce .Values.global.mariadb.auth.password .Values.mariadb.auth.password -}}
+            {{- coalesce .Values.global.mariadb.auth.password .Values.mariadb.db.password -}}
         {{- else -}}
-            {{- .Values.mariadb.auth.password -}}
+            {{- .Values.mariadb.db.password -}}
         {{- end -}}
     {{- else -}}
-        {{- .Values.mariadb.auth.password -}}
+        {{- .Values.mariadb.db.password -}}
     {{- end -}}
 {{- else -}}
     {{- tpl .Values.externalDatabase.password $ -}}
